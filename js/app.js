@@ -20,7 +20,7 @@
                 });
             },
             loadEvents : function () {
-                $('button').bind('click', app._fetch);
+                $('.spin-btn').bind('click', app._fetch);
 
                 //TODO
                 $(win).bind('beforeunload', function () {
@@ -33,7 +33,15 @@
         $.when(app.spinIt()).then(function () {
             console.log(arguments);
             spinner.stop();
-            $('#frame').prop('src', app.defaults.playerUrl.replace(rId, app.currId));
+            $('<iframe />', {
+                width : 400,
+                height : 300,
+                frameborder : 0,
+                webkitAllowFullScreen : 1,
+                allowFullScreen : 1,
+                src : app.defaults.playerUrl.replace(rId, app.currId)
+            }).appendTo($('#vid-box'));
+            // $('#frame').attr('src', app.defaults.playerUrl.replace(rId, app.currId));
         }, function () {
             setTimeout(app._fetch, 50);
             console.log('fail');
@@ -44,7 +52,7 @@
         app.generateId();
 
         $('#div').text(app.currId);
-        spinner.spin(document.body);
+        spinner.spin($('#vid-box')[0]);
 
         var dfd = $.Deferred();
 

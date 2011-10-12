@@ -1,3 +1,32 @@
+@import url(http://fonts.googleapis.com/css?family=Pacifico);
+
+html,body{
+  height:100%;
+}
 body{
-    background:url(../cubes.png);
+  background:url(../img/cubes.png);
+}
+
+h1{
+  font-family:Pacifico, sans-serif;
+  font-size:40px;
+  padding-top:1em;
+  margin-bottom:0.25em;
+}
+p{
+  text-indent:0.5em;
+  font-size:16px;
+}
+
+#roulette{
+  width:800px;
+  margin:0 auto;
+}
+
+.spin-btn.large {
+  display: block;
+  font-size: 30px;
+  height: 100px;
+  margin: 200px auto 0;
+  width: 300px;
 }
