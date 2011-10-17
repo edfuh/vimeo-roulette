@@ -1,47 +1,39 @@
-(function ($, win) {
+(function ($, global) {
     var rId = /\{\{id\}\}/,
-        spinner,
-        app = win.app = {
+        spinner = new Spinner(),
+        app = global.app = {
             cache : {},
             currId : 0,
             defaults : {
                 playerUrl : 'http://player.vimeo.com/video/{{id}}?title=0&byline=0&portrait=0&autoplay=1',
                 apiUrl    : 'http://vimeo.com/api/v2/video/{{id}}.json'
             },
-            generateId : function () {
-                var id = ~~(Math.random() * 3e7);
-                app.cache[id] = id;
-                return app.currId = id;
-            },
             init : function () {
                 app.loadEvents();
-                $.getScript('https://raw.github.com/fgnass/spin.js/master/spin.js', function () {
-                    spinner = new Spinner();
-                });
+
             },
             loadEvents : function () {
                 $('.spin-btn').bind('click', app._fetch);
 
                 //TODO
-                $(win).bind('beforeunload', function () {
+                $(global).bind('beforeunload', function () {
                     $('#frame').prop('src', 'javascript: void(0)');
                 });
             }
-        };
+        },
+        frame = $('<iframe />', {
+            width : 400,
+            height : 300,
+            frameborder : 0,
+            webkitAllowFullScreen : 1,
+            allowFullScreen : 1
+        });
 
     app._fetch = function () {
         $.when(app.spinIt()).then(function () {
-            console.log(arguments);
+            console.log(arguments[0]);
             spinner.stop();
-            $('<iframe />', {
-                width : 400,
-                height : 300,
-                frameborder : 0,
-                webkitAllowFullScreen : 1,
-                allowFullScreen : 1,
-                src : app.defaults.playerUrl.replace(rId, app.currId)
-            }).appendTo($('#vid-box'));
-            // $('#frame').attr('src', app.defaults.playerUrl.replace(rId, app.currId));
+            $('#vid-box').html(frame.attr('src', app.defaults.playerUrl.replace(rId, app.currId)));
         }, function () {
             setTimeout(app._fetch, 50);
             console.log('fail');
@@ -61,6 +53,7 @@
             dataType : 'jsonp'
         })
         .done(function (result) {
+            // video doesn't exist
             if (result.length) {
                 dfd.resolve(result);
                 //console.log(result);
@@ -71,6 +64,24 @@
 
         return dfd.promise();
     };
+
+    global.RouletteModel = Backbone.Model.extend({
+        rand : function (n) {
+            n = n || 99;
+            return ~~(Math.random() * (Math.random() * n));
+        },
+        generateId : function () {
+            var rand = this.rand,
+                id = parseInt(rand(30) + '' + rand(99) + '' +
+                              rand(99) + '' + rand(99) + '', 10);
+
+            if (id in app.cache) {
+              console.log('cache hit');
+                return app.generateId();
+            }
+            return app.currId = app.cache[id] = id;
+        }
+    });
 
     $(app.init);
 }(jQuery, this));
