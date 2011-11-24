@@ -1,24 +1,11 @@
 (function ($, global) {
     var rId = /\{\{id\}\}/,
-        spinner = new Spinner(),
         app = global.app = {
             cache : {},
             currId : 0,
             defaults : {
                 playerUrl : 'http://player.vimeo.com/video/{{id}}?title=0&byline=0&portrait=0&autoplay=1',
                 apiUrl    : 'http://vimeo.com/api/v2/video/{{id}}.json'
-            },
-            init : function () {
-                app.loadEvents();
-
-            },
-            loadEvents : function () {
-                $('.spin-btn').bind('click', app._fetch);
-
-                //TODO
-                $(global).bind('beforeunload', function () {
-                    $('#frame').prop('src', 'javascript: void(0)');
-                });
             }
         },
         frame = $('<iframe />', {
@@ -28,42 +15,6 @@
             webkitAllowFullScreen : 1,
             allowFullScreen : 1
         });
-
-    app._fetch = function () {
-        $.when(app.spinIt()).then(function () {
-            console.log(arguments[0]);
-            spinner.stop();
-            $('#vid-box').html(frame.attr('src', app.defaults.playerUrl.replace(rId, app.currId)));
-        }, function () {
-            setTimeout(app._fetch, 50);
-            console.log('fail');
-        });
-    };
-
-    app.spinIt = function () {
-        app.generateId();
-
-        $('#div').text(app.currId);
-        spinner.spin($('#vid-box')[0]);
-
-        var dfd = $.Deferred();
-
-        $.ajax({
-            url : app.defaults.apiUrl.replace(rId, app.currId),
-            dataType : 'jsonp'
-        })
-        .done(function (result) {
-            // video doesn't exist
-            if (result.length) {
-                dfd.resolve(result);
-                //console.log(result);
-            } else {
-                dfd.reject();
-            }
-        });
-
-        return dfd.promise();
-    };
 
     global.RouletteModel = Backbone.Model.extend({
         rand : function (n) {
@@ -76,10 +27,66 @@
                               rand(99) + '' + rand(99) + '', 10);
 
             if (id in app.cache) {
-              console.log('cache hit');
-                return app.generateId();
+                console.log('cache hit');
+                return this.generateId();
             }
-            return app.currId = app.cache[id] = id;
+
+            this.cache[id] = id;
+            app.currId = id;
+            return id;
+        },
+        spinIt : function () {
+            this.generateId();
+
+            $('#div').text(app.currId);
+            spinner.spin($('#vid-box')[0]);
+
+            var dfd = $.Deferred();
+
+            $.ajax({
+                url : app.defaults.apiUrl.replace(rId, app.currId),
+                dataType : 'jsonp'
+            })
+            .done(function (result) {
+                // video doesn't exist
+                if (result.length) {
+                    dfd.resolve(result);
+                    //console.log(result);
+                } else {
+                    dfd.reject();
+                }
+            });
+
+            return dfd.promise();
+        },
+        _fetch : function () {
+            $.when(app.spinIt()).then(function () {
+                console.log(arguments[0]);
+                spinner.stop();
+                $('#vid-box').html(frame.attr('src', app.defaults.playerUrl.replace(rId, app.currId)));
+            }, function () {
+                console.log('fail');
+                _.delay(app._fetch, 50);
+            });
+        }
+    });
+
+    global.RouletteView = Backbone.View.extend({
+        el : $('#vid-box'),
+        events: {
+          'click .spin-btn' : 'getVideo',
+          'keyup #new-todo' : 'showTooltip',
+          'click .todo-clear a' : 'clearCompleted'
+        },
+        spinner : new Spinner,
+        initialize : function() {
+            //TODO
+            $(global).bind('beforeunload', function () {
+                $('#frame').prop('src', 'javascript: void(0)');
+            });
+        },
+        getVideo : function () {
+            
         }
     });
 
